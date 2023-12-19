@@ -1,11 +1,11 @@
 #' Replicates ash1 but without print statement
 #'
 #' @param bins number of bins
-#' @param m
-#' @param kopt
 #'
-#' @return
-ash2 <- function(bins, m = 5, kopt = c(2, 2)) {
+#' @return list which is useable by kde methods
+ash2 <- function(bins) {
+  m <- 5 # not sure on what these mean
+  kopt <- c(2, 2) # not sure on what these mean
   nc <- bins$nc
   ab <- bins$ab
   nbin <- length(nc)
@@ -17,6 +17,14 @@ ash2 <- function(bins, m = 5, kopt = c(2, 2)) {
   list(x = r$t, y = r$f, m = m, ab = ab, kopt = kopt, ier = r$ier)
 }
 
+#' Create kde give a set of draws
+#'
+#' @param x a set of univariate draws
+#' @param method a kde method (either bkde or ash1)
+#' @param bandwidth bandwidth of kde
+#' @param ... other arguments passed to kde method
+#'
+#' @return a function which when evaluated returns estimated density at a point
 create_kde <- function(x, method = "bkde", bandwidth = NULL, ...) {
   if (!method %in% c("bkde", "ash1")) {
     stop("Method must either be bkde or ash1.")
@@ -25,23 +33,23 @@ create_kde <- function(x, method = "bkde", bandwidth = NULL, ...) {
   bandwidth1 <- bandwidth
   if (method == "bkde") {
     if (is.null(bandwidth)) {
-      a <- bkde(x, ...)
+      a <- KernSmooth::bkde(x, ...)
     } else {
-      a <- bkde(x, bandwidth = bandwidth1, ...)
+      a <- KernSmooth::bkde(x, bandwidth = bandwidth1, ...)
     }
   } else if (method == "ash1") {
     if (is.null(bandwidth)) {
-      a <- ash2(bin1(x), ...)
+      a <- ash2(ash::bin1(x), ...)
     } else {
-      a <- ash2(bin1(x, nbin = round(bandwidth1 * 50)), ...)
+      a <- ash2(ash::bin1(x, nbin = round(bandwidth1 * 50)), ...)
     }
   }
 
-  f <- approxfun(a$x, a$y, method = "constant")
+  f <- stats::approxfun(a$x, a$y, method = "constant")
 
   kde <- function(x) {
     f_val <- f(x)
-    if_else(is.na(f_val), 0, f_val)
+    dplyr::if_else(is.na(f_val), 0, f_val)
   }
   kde
 }
@@ -59,7 +67,7 @@ probability_comparison <- function(prob1, prob2) {
   n <- length(prob1)
   for (i in seq_along(prob1)) {
     if ((!is.na(prob1[i])) & (!is.na(prob2[i]))) {
-      k <- k + if_else(prob1[i] > prob2[i], 1, 0)
+      k <- k + dplyr::if_else(prob1[i] > prob2[i], 1, 0)
     } else if (!is.na(prob1[i])) {
       k <- k + 1
     } else if (is.na(prob1[i]) & is.na(prob2[i])) {
@@ -81,8 +89,8 @@ probability_comparison <- function(prob1, prob2) {
 #' @param method the method for performing kernel density estimation (either bkde or ash1)
 #' @param training_percent the fraction of draws to use for training set (defaults to 0.7)
 #' with the remainder comprising the testing set
-#' @param bandwidth_1 the bandwidth to use if/when fitting a kernel density estimator to the draws in draws_prior
-#' @param bandwidth_2 the bandwidth to use if/when fitting a kernel density estimator to the draws in draws_posterior
+#' @param bandwidth_prior the bandwidth to use if/when fitting a kernel density estimator to the draws in draws_prior
+#' @param bandwidth_posterior the bandwidth to use if/when fitting a kernel density estimator to the draws in draws_posterior
 #' @param ... other arguments to pass to create_kde
 #'
 #' @return a d* value, which is between 0 and 1. A value of 0 indicates the prior
@@ -100,8 +108,8 @@ dstar <- function(draws_prior, draws_posterior,
                   density_prior = NULL, density_posterior = NULL,
                   method = "bkde",
                   training_percent = 0.7,
-                  bandwidth_1 = NULL,
-                  bandwidth_2 = NULL,
+                  bandwidth_prior = NULL,
+                  bandwidth_posterior = NULL,
                   ...) {
   # check if density_prior or density_posterior are defined (i.e. a probability density)
   # if so check they must be functions
@@ -135,10 +143,10 @@ dstar <- function(draws_prior, draws_posterior,
 
   if (isfunc1 && isfunc2) {
     # use whole sets given
-    prob11 <- map_dbl(draws_prior, density_prior)
-    prob12 <- map_dbl(draws_prior, density_posterior)
-    prob21 <- map_dbl(draws_posterior, density_prior)
-    prob22 <- map_dbl(draws_posterior, density_posterior)
+    prob11 <- purrr::map_dbl(draws_prior, density_prior)
+    prob12 <- purrr::map_dbl(draws_prior, density_posterior)
+    prob21 <- purrr::map_dbl(draws_posterior, density_prior)
+    prob22 <- purrr::map_dbl(draws_posterior, density_posterior)
   } else {
     # training and testing sets
     idxs <- seq_along(draws_prior)
@@ -153,31 +161,31 @@ dstar <- function(draws_prior, draws_posterior,
     if (isfunc1) {
       density_posterior <- create_kde(draws_posterior_train,
         method,
-        bandwidth = bandwidth_2,
+        bandwidth = bandwidth_posterior,
         ...
       )
     } else if (isfunc2) {
       density_prior <- create_kde(draws_prior_train,
         method,
-        bandwidth = bandwidth_1,
+        bandwidth = bandwidth_prior,
         ...
       )
     } else {
       density_prior <- create_kde(draws_prior_train,
         method,
-        bandwidth = bandwidth_1,
+        bandwidth = bandwidth_prior,
         ...
       )
       density_posterior <- create_kde(draws_posterior_train,
         method,
-        bandwidth = bandwidth_2,
+        bandwidth = bandwidth_posterior,
         ...
       )
     }
-    prob11 <- map_dbl(draws_prior_test, density_prior)
-    prob12 <- map_dbl(draws_prior_test, density_posterior)
-    prob21 <- map_dbl(draws_posterior_test, density_prior)
-    prob22 <- map_dbl(draws_posterior_test, density_posterior)
+    prob11 <- purrr::map_dbl(draws_prior_test, density_prior)
+    prob12 <- purrr::map_dbl(draws_prior_test, density_posterior)
+    prob21 <- purrr::map_dbl(draws_posterior_test, density_prior)
+    prob22 <- purrr::map_dbl(draws_posterior_test, density_posterior)
   }
   # calculate accuracy
   acc1 <- probability_comparison(prob11, prob12)
@@ -186,6 +194,6 @@ dstar <- function(draws_prior, draws_posterior,
 
   # calculate score
   score <- 2 * (acc_overall - 0.5)
-  score <- if_else(score < 0, 0, score)
-  return(score)
+  score <- dplyr::if_else(score < 0, 0, score)
+  score
 }
