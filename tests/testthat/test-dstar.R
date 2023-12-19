@@ -1,5 +1,4 @@
 test_that("create_kde works", {
-
   # works with bkde (default)
   n <- 100000
   x <- stats::rnorm(n)
@@ -25,31 +24,28 @@ test_that("create_kde works", {
 })
 
 test_that("probability_comparison works ok", {
-
   n <- 3
   probs1 <- rep(0.8, n)
   probs2 <- rep(0.2, n)
   expect_equal(probability_comparison(probs1, probs2), 1)
 
   probs1 <- c(0.8, NA, 0.8)
-  expect_equal(probability_comparison(probs1, probs2), 2/3)
+  expect_equal(probability_comparison(probs1, probs2), 2 / 3)
 
   probs2 <- c(0.2, NA, 0.2)
   expect_equal(probability_comparison(probs1, probs2), 1)
 })
 
 test_that("dstar throws errors when incorrect arguments given", {
-
   n <- 100000
   x1 <- stats::rnorm(n)
   x2 <- stats::rnorm(n)
-  density_prior <- data.frame(x=x1)
+  density_prior <- data.frame(x = x1)
   expect_error(dstar(x1, x2, density_prior))
-  expect_error(dstar(x1, x2, density_posterior=density_prior))
+  expect_error(dstar(x1, x2, density_posterior = density_prior))
 })
 
 test_that("dstar works ok when using kde", {
-
   n <- 1000
   x1 <- stats::rnorm(n)
   x2 <- stats::rnorm(n)
@@ -73,9 +69,11 @@ test_that("dstar works ok when using kde", {
   expect_true(d <= 1)
 
   # test runs with different bandwidths
-  d <- dstar(x1, x2, method = "ash1",
-             bandwidth_prior = 0.1,
-             bandwidth_posterior = 0.1)
+  d <- dstar(x1, x2,
+    method = "ash1",
+    bandwidth_prior = 0.1,
+    bandwidth_posterior = 0.1
+  )
   expect_true(d > 0.5)
   expect_true(d <= 1)
 
@@ -86,10 +84,9 @@ test_that("dstar works ok when using kde", {
 })
 
 test_that("dstar works ok with long tailed distributions", {
-
   n <- 1000
   x1 <- stats::rnorm(n)
-  x2 <- stats::rt(n, df=0.1)
+  x2 <- stats::rt(n, df = 0.1)
   d <- dstar(x1, x2)
   expect_true(d > 0.1)
   expect_true(d <= 1)
@@ -112,9 +109,9 @@ test_that("dstar works when supplying analytical densities", {
 
   # supplying both
   d <- dstar(x1, x2,
-             density_prior = stats::dnorm,
-             density_posterior = stats::dnorm)
+    density_prior = stats::dnorm,
+    density_posterior = stats::dnorm
+  )
   expect_true(d < 0.1)
   expect_true(d >= 0)
 })
-
