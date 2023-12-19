@@ -4,15 +4,13 @@
 \alias{ash2}
 \title{Replicates ash1 but without print statement}
 \usage{
-ash2(bins, m = 5, kopt = c(2, 2))
+ash2(bins)
 }
 \arguments{
 \item{bins}{number of bins}
-
-\item{kopt}{}
 }
 \value{
-
+list which is useable by kde methods
 }
 \description{
 Replicates ash1 but without print statement

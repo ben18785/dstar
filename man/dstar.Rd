@@ -6,30 +6,51 @@
 Bayesian inference}
 \usage{
 dstar(
-  x1,
-  x2,
-  f1 = NULL,
-  f2 = NULL,
+  draws_prior,
+  draws_posterior,
+  density_prior = NULL,
+  density_posterior = NULL,
   method = "bkde",
   training_percent = 0.7,
-  bandwidth_1 = NULL,
-  bandwidth_2 = NULL,
+  bandwidth_prior = NULL,
+  bandwidth_posterior = NULL,
   ...
 )
 }
 \arguments{
-\item{x1}{a set of univariate draws of a parameter from the prior}
+\item{draws_prior}{a set of univariate draws of a parameter from the prior}
 
-\item{x2}{a set of univariate draws of a parameter from the posterior}
+\item{draws_posterior}{a set of univariate draws of a parameter from the posterior}
 
-\item{f1}{if}
+\item{density_prior}{the density representing the univariate prior on the parameter, if known}
 
-\item{...}{}
+\item{density_posterior}{the density representing the univariate posterior on the parameter,
+if known}
+
+\item{method}{the method for performing kernel density estimation (either bkde or ash1)}
+
+\item{training_percent}{the fraction of draws to use for training set (defaults to 0.7)
+with the remainder comprising the testing set}
+
+\item{bandwidth_prior}{the bandwidth to use if/when fitting a kernel density estimator to the draws in draws_prior}
+
+\item{bandwidth_posterior}{the bandwidth to use if/when fitting a kernel density estimator to the draws in draws_posterior}
+
+\item{...}{other arguments to pass to create_kde}
 }
 \value{
-
+a d* value, which is between 0 and 1. A value of 0 indicates the prior
+and posterior and identical; a value of 1 indicates they don't overlap at all
 }
 \description{
 Calculates the d* measure of information gain from after seeing the data in
 Bayesian inference
+}
+\examples{
+# shows how to use function supposing prior is theta ~ normal(0, 1) and posterior is
+# theta|data ~ normal(1, 1)
+n <- 1000 # number of prior and posterior draws you generate
+draws_prior <- rnorm(n, 0, 1)
+draws_posterior <- rnorm(n, 1, 1)
+dstar(draws_prior, draws_posterior)
 }

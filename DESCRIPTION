@@ -3,7 +3,7 @@ Title: Calculate Information Gained From The Data When Performing Bayesian Infer
 Version: 0.0.0.9000
 Authors@R: 
     person("Ben", "Lambert", , "ben.c.lambert@gmail.com", role = c("aut", "cre"))
-Description: Allows users to calculate the information gained from the data when performing Bayesian inference
+Description: Allows users to calculate the information gained from the data when performing Bayesian inference.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
